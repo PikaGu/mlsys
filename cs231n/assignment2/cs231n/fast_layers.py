@@ -1,16 +1,15 @@
 from __future__ import print_function
 import numpy as np
-import torch
-import torch.nn as nn
-try:
-    from cs231n.im2col_cython import col2im_cython, im2col_cython
-    from cs231n.im2col_cython import col2im_6d_cython
-except ImportError:
-    print('run the following from the cs231n directory and try again:')
-    print('python setup.py build_ext --inplace')
-    print('You may also need to restart your iPython kernel')
 
-from cs231n.im2col import *
+try:
+    from .im2col_cython import col2im_cython, im2col_cython
+    from .im2col_cython import col2im_6d_cython
+except ImportError:
+    print("""=========== You can safely ignore the message below if you are NOT working on ConvolutionalNetworks.ipynb ===========""")
+    print("\tYou will need to compile a Cython extension for a portion of this assignment.")
+    print("\tThe instructions to do this will be given in a section of the notebook below.")
+
+from .im2col import *
 
 
 def conv_forward_im2col(x, w, b, conv_param):
@@ -20,11 +19,11 @@ def conv_forward_im2col(x, w, b, conv_param):
     """
     N, C, H, W = x.shape
     num_filters, _, filter_height, filter_width = w.shape
-    stride, pad = conv_param['stride'], conv_param['pad']
+    stride, pad = conv_param["stride"], conv_param["pad"]
 
     # Check dimensions
-    assert (W + 2 * pad - filter_width) % stride == 0, 'width does not work'
-    assert (H + 2 * pad - filter_height) % stride == 0, 'height does not work'
+    assert (W + 2 * pad - filter_width) % stride == 0, "width does not work"
+    assert (H + 2 * pad - filter_height) % stride == 0, "height does not work"
 
     # Create output
     out_height = (H + 2 * pad - filter_height) // stride + 1
@@ -42,38 +41,18 @@ def conv_forward_im2col(x, w, b, conv_param):
     return out, cache
 
 
-def conv_forward_pytorch(x, w, b, conv_param):
-    N, C, H, W = x.shape
-    F, _, HH, WW = w.shape
-    stride, pad = conv_param['stride'], conv_param['pad']
-    layer = nn.Conv2d(C, F, (HH, WW), stride=stride, padding=pad)
-    layer.weight = nn.Parameter(torch.tensor(w))
-    layer.bias = nn.Parameter(torch.tensor(b))
-    tx = torch.tensor(x, requires_grad=True)
-    out = layer(tx)
-    cache = (x, w, b, conv_param, tx, out, layer)
-    return out, cache
-
-def conv_backward_pytorch(dout, cache):
-    x, _, _, _, tx, out, layer = cache
-    out.backward(torch.tensor(dout))
-    dx = tx.grad.detach().numpy()
-    dw = layer.weight.grad.detach().numpy()
-    db = layer.bias.grad.detach().numpy()
-    return dx, dw, db
-
 def conv_forward_strides(x, w, b, conv_param):
     N, C, H, W = x.shape
     F, _, HH, WW = w.shape
-    stride, pad = conv_param['stride'], conv_param['pad']
+    stride, pad = conv_param["stride"], conv_param["pad"]
 
     # Check dimensions
-    #assert (W + 2 * pad - WW) % stride == 0, 'width does not work'
-    #assert (H + 2 * pad - HH) % stride == 0, 'height does not work'
+    # assert (W + 2 * pad - WW) % stride == 0, 'width does not work'
+    # assert (H + 2 * pad - HH) % stride == 0, 'height does not work'
 
     # Pad the input
     p = pad
-    x_padded = np.pad(x, ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
+    x_padded = np.pad(x, ((0, 0), (0, 0), (p, p), (p, p)), mode="constant")
 
     # Figure out output dimensions
     H += 2 * pad
@@ -85,8 +64,7 @@ def conv_forward_strides(x, w, b, conv_param):
     shape = (C, HH, WW, N, out_h, out_w)
     strides = (H * W, W, 1, C * H * W, stride * W, stride)
     strides = x.itemsize * np.array(strides)
-    x_stride = np.lib.stride_tricks.as_strided(x_padded,
-                  shape=shape, strides=strides)
+    x_stride = np.lib.stride_tricks.as_strided(x_padded, shape=shape, strides=strides)
     x_cols = np.ascontiguousarray(x_stride)
     x_cols.shape = (C * HH * WW, N * out_h * out_w)
 
@@ -108,7 +86,7 @@ def conv_forward_strides(x, w, b, conv_param):
 
 def conv_backward_strides(dout, cache):
     x, w, b, conv_param, x_cols = cache
-    stride, pad = conv_param['stride'], conv_param['pad']
+    stride, pad = conv_param["stride"], conv_param["pad"]
 
     N, C, H, W = x.shape
     F, _, HH, WW = w.shape
@@ -132,7 +110,7 @@ def conv_backward_im2col(dout, cache):
     based on im2col and col2im.
     """
     x, w, b, conv_param, x_cols = cache
-    stride, pad = conv_param['stride'], conv_param['pad']
+    stride, pad = conv_param["stride"], conv_param["pad"]
 
     db = np.sum(dout, axis=(0, 2, 3))
 
@@ -142,8 +120,17 @@ def conv_backward_im2col(dout, cache):
 
     dx_cols = w.reshape(num_filters, -1).T.dot(dout_reshaped)
     # dx = col2im_indices(dx_cols, x.shape, filter_height, filter_width, pad, stride)
-    dx = col2im_cython(dx_cols, x.shape[0], x.shape[1], x.shape[2], x.shape[3],
-                       filter_height, filter_width, pad, stride)
+    dx = col2im_cython(
+        dx_cols,
+        x.shape[0],
+        x.shape[1],
+        x.shape[2],
+        x.shape[3],
+        filter_height,
+        filter_width,
+        pad,
+        stride,
+    )
 
     return dx, dw, db
 
@@ -162,17 +149,17 @@ def max_pool_forward_fast(x, pool_param):
     is not much faster than the naive method.
     """
     N, C, H, W = x.shape
-    pool_height, pool_width = pool_param['pool_height'], pool_param['pool_width']
-    stride = pool_param['stride']
+    pool_height, pool_width = pool_param["pool_height"], pool_param["pool_width"]
+    stride = pool_param["stride"]
 
     same_size = pool_height == pool_width == stride
     tiles = H % pool_height == 0 and W % pool_width == 0
     if same_size and tiles:
         out, reshape_cache = max_pool_forward_reshape(x, pool_param)
-        cache = ('reshape', reshape_cache)
+        cache = ("reshape", reshape_cache)
     else:
         out, im2col_cache = max_pool_forward_im2col(x, pool_param)
-        cache = ('im2col', im2col_cache)
+        cache = ("im2col", im2col_cache)
     return out, cache
 
 
@@ -184,9 +171,9 @@ def max_pool_backward_fast(dout, cache):
     which method was used to generate the cache.
     """
     method, real_cache = cache
-    if method == 'reshape':
+    if method == "reshape":
         return max_pool_backward_reshape(dout, real_cache)
-    elif method == 'im2col':
+    elif method == "im2col":
         return max_pool_backward_im2col(dout, real_cache)
     else:
         raise ValueError('Unrecognized method "%s"' % method)
@@ -200,13 +187,14 @@ def max_pool_forward_reshape(x, pool_param):
     This can only be used for square pooling regions that tile the input.
     """
     N, C, H, W = x.shape
-    pool_height, pool_width = pool_param['pool_height'], pool_param['pool_width']
-    stride = pool_param['stride']
-    assert pool_height == pool_width == stride, 'Invalid pool params'
+    pool_height, pool_width = pool_param["pool_height"], pool_param["pool_width"]
+    stride = pool_param["stride"]
+    assert pool_height == pool_width == stride, "Invalid pool params"
     assert H % pool_height == 0
     assert W % pool_height == 0
-    x_reshaped = x.reshape(N, C, H // pool_height, pool_height,
-                           W // pool_width, pool_width)
+    x_reshaped = x.reshape(
+        N, C, H // pool_height, pool_height, W // pool_width, pool_width
+    )
     out = x_reshaped.max(axis=3).max(axis=4)
 
     cache = (x, x_reshaped, out)
@@ -234,7 +222,7 @@ def max_pool_backward_reshape(dout, cache):
 
     dx_reshaped = np.zeros_like(x_reshaped)
     out_newaxis = out[:, :, :, np.newaxis, :, np.newaxis]
-    mask = (x_reshaped == out_newaxis)
+    mask = x_reshaped == out_newaxis
     dout_newaxis = dout[:, :, :, np.newaxis, :, np.newaxis]
     dout_broadcast, _ = np.broadcast_arrays(dout_newaxis, dx_reshaped)
     dx_reshaped[mask] = dout_broadcast[mask]
@@ -252,11 +240,11 @@ def max_pool_forward_im2col(x, pool_param):
     possible.
     """
     N, C, H, W = x.shape
-    pool_height, pool_width = pool_param['pool_height'], pool_param['pool_width']
-    stride = pool_param['stride']
+    pool_height, pool_width = pool_param["pool_height"], pool_param["pool_width"]
+    stride = pool_param["stride"]
 
-    assert (H - pool_height) % stride == 0, 'Invalid height'
-    assert (W - pool_width) % stride == 0, 'Invalid width'
+    assert (H - pool_height) % stride == 0, "Invalid height"
+    assert (W - pool_width) % stride == 0, "Invalid width"
 
     out_height = (H - pool_height) // stride + 1
     out_width = (W - pool_width) // stride + 1
@@ -280,14 +268,15 @@ def max_pool_backward_im2col(dout, cache):
     """
     x, x_cols, x_cols_argmax, pool_param = cache
     N, C, H, W = x.shape
-    pool_height, pool_width = pool_param['pool_height'], pool_param['pool_width']
-    stride = pool_param['stride']
+    pool_height, pool_width = pool_param["pool_height"], pool_param["pool_width"]
+    stride = pool_param["stride"]
 
     dout_reshaped = dout.transpose(2, 3, 0, 1).flatten()
     dx_cols = np.zeros_like(x_cols)
     dx_cols[x_cols_argmax, np.arange(dx_cols.shape[1])] = dout_reshaped
-    dx = col2im_indices(dx_cols, (N * C, 1, H, W), pool_height, pool_width,
-                padding=0, stride=stride)
+    dx = col2im_indices(
+        dx_cols, (N * C, 1, H, W), pool_height, pool_width, padding=0, stride=stride
+    )
     dx = dx.reshape(x.shape)
 
     return dx

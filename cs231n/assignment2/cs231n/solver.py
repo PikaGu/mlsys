@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 from future import standard_library
+
 standard_library.install_aliases()
 from builtins import range
 from builtins import object
@@ -45,10 +46,10 @@ class Solver(object):
     solver = Solver(model, data,
                     update_rule='sgd',
                     optim_config={
-                      'learning_rate': 1e-3,
+                      'learning_rate': 1e-4,
                     },
                     lr_decay=0.95,
-                    num_epochs=10, batch_size=100,
+                    num_epochs=5, batch_size=200,
                     print_every=100)
     solver.train()
 
@@ -115,28 +116,28 @@ class Solver(object):
           epoch.
         """
         self.model = model
-        self.X_train = data['X_train']
-        self.y_train = data['y_train']
-        self.X_val = data['X_val']
-        self.y_val = data['y_val']
+        self.X_train = data["X_train"]
+        self.y_train = data["y_train"]
+        self.X_val = data["X_val"]
+        self.y_val = data["y_val"]
 
         # Unpack keyword arguments
-        self.update_rule = kwargs.pop('update_rule', 'sgd')
-        self.optim_config = kwargs.pop('optim_config', {})
-        self.lr_decay = kwargs.pop('lr_decay', 1.0)
-        self.batch_size = kwargs.pop('batch_size', 100)
-        self.num_epochs = kwargs.pop('num_epochs', 10)
-        self.num_train_samples = kwargs.pop('num_train_samples', 1000)
-        self.num_val_samples = kwargs.pop('num_val_samples', None)
+        self.update_rule = kwargs.pop("update_rule", "sgd")
+        self.optim_config = kwargs.pop("optim_config", {})
+        self.lr_decay = kwargs.pop("lr_decay", 1.0)
+        self.batch_size = kwargs.pop("batch_size", 100)
+        self.num_epochs = kwargs.pop("num_epochs", 10)
+        self.num_train_samples = kwargs.pop("num_train_samples", 1000)
+        self.num_val_samples = kwargs.pop("num_val_samples", None)
 
-        self.checkpoint_name = kwargs.pop('checkpoint_name', None)
-        self.print_every = kwargs.pop('print_every', 10)
-        self.verbose = kwargs.pop('verbose', True)
+        self.checkpoint_name = kwargs.pop("checkpoint_name", None)
+        self.print_every = kwargs.pop("print_every", 10)
+        self.verbose = kwargs.pop("verbose", True)
 
         # Throw an error if there are extra keyword arguments
         if len(kwargs) > 0:
-            extra = ', '.join('"%s"' % k for k in list(kwargs.keys()))
-            raise ValueError('Unrecognized arguments %s' % extra)
+            extra = ", ".join('"%s"' % k for k in list(kwargs.keys()))
+            raise ValueError("Unrecognized arguments %s" % extra)
 
         # Make sure the update rule exists, then replace the string
         # name with the actual function
@@ -145,7 +146,6 @@ class Solver(object):
         self.update_rule = getattr(optim, self.update_rule)
 
         self._reset()
-
 
     def _reset(self):
         """
@@ -165,7 +165,6 @@ class Solver(object):
         for p in self.model.params:
             d = {k: v for k, v in self.optim_config.items()}
             self.optim_configs[p] = d
-
 
     def _step(self):
         """
@@ -190,28 +189,27 @@ class Solver(object):
             self.model.params[p] = next_w
             self.optim_configs[p] = next_config
 
-
     def _save_checkpoint(self):
-        if self.checkpoint_name is None: return
+        if self.checkpoint_name is None:
+            return
         checkpoint = {
-          'model': self.model,
-          'update_rule': self.update_rule,
-          'lr_decay': self.lr_decay,
-          'optim_config': self.optim_config,
-          'batch_size': self.batch_size,
-          'num_train_samples': self.num_train_samples,
-          'num_val_samples': self.num_val_samples,
-          'epoch': self.epoch,
-          'loss_history': self.loss_history,
-          'train_acc_history': self.train_acc_history,
-          'val_acc_history': self.val_acc_history,
+            "model": self.model,
+            "update_rule": self.update_rule,
+            "lr_decay": self.lr_decay,
+            "optim_config": self.optim_config,
+            "batch_size": self.batch_size,
+            "num_train_samples": self.num_train_samples,
+            "num_val_samples": self.num_val_samples,
+            "epoch": self.epoch,
+            "loss_history": self.loss_history,
+            "train_acc_history": self.train_acc_history,
+            "val_acc_history": self.val_acc_history,
         }
-        filename = '%s_epoch_%d.pkl' % (self.checkpoint_name, self.epoch)
+        filename = "%s_epoch_%d.pkl" % (self.checkpoint_name, self.epoch)
         if self.verbose:
             print('Saving checkpoint to "%s"' % filename)
-        with open(filename, 'wb') as f:
+        with open(filename, "wb") as f:
             pickle.dump(checkpoint, f)
-
 
     def check_accuracy(self, X, y, num_samples=None, batch_size=100):
         """
@@ -253,7 +251,6 @@ class Solver(object):
 
         return acc
 
-
     def train(self):
         """
         Run optimization to train the model.
@@ -267,8 +264,10 @@ class Solver(object):
 
             # Maybe print training loss
             if self.verbose and t % self.print_every == 0:
-                print('(Iteration %d / %d) loss: %f' % (
-                       t + 1, num_iterations, self.loss_history[-1]))
+                print(
+                    "(Iteration %d / %d) loss: %f"
+                    % (t + 1, num_iterations, self.loss_history[-1])
+                )
 
             # At the end of every epoch, increment the epoch counter and decay
             # the learning rate.
@@ -276,24 +275,28 @@ class Solver(object):
             if epoch_end:
                 self.epoch += 1
                 for k in self.optim_configs:
-                    self.optim_configs[k]['learning_rate'] *= self.lr_decay
+                    self.optim_configs[k]["learning_rate"] *= self.lr_decay
 
             # Check train and val accuracy on the first iteration, the last
             # iteration, and at the end of each epoch.
-            first_it = (t == 0)
-            last_it = (t == num_iterations - 1)
+            first_it = t == 0
+            last_it = t == num_iterations - 1
             if first_it or last_it or epoch_end:
-                train_acc = self.check_accuracy(self.X_train, self.y_train,
-                    num_samples=self.num_train_samples)
-                val_acc = self.check_accuracy(self.X_val, self.y_val,
-                    num_samples=self.num_val_samples)
+                train_acc = self.check_accuracy(
+                    self.X_train, self.y_train, num_samples=self.num_train_samples
+                )
+                val_acc = self.check_accuracy(
+                    self.X_val, self.y_val, num_samples=self.num_val_samples
+                )
                 self.train_acc_history.append(train_acc)
                 self.val_acc_history.append(val_acc)
                 self._save_checkpoint()
 
                 if self.verbose:
-                    print('(Epoch %d / %d) train acc: %f; val_acc: %f' % (
-                           self.epoch, self.num_epochs, train_acc, val_acc))
+                    print(
+                        "(Epoch %d / %d) train acc: %f; val_acc: %f"
+                        % (self.epoch, self.num_epochs, train_acc, val_acc)
+                    )
 
                 # Keep track of the best model
                 if val_acc > self.best_val_acc:
