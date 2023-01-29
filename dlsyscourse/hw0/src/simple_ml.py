@@ -20,7 +20,7 @@ def add(x, y):
         Sum of x + y
     """
     ### BEGIN YOUR CODE
-    pass
+    return x + y
     ### END YOUR CODE
 
 
@@ -48,7 +48,17 @@ def parse_mnist(image_filename, label_filename):
                 for MNIST will contain the values 0-9.
     """
     ### BEGIN YOUR CODE
-    pass
+    with gzip.open(image_filename, 'rb') as f:
+        content = f.read()
+        X = np.frombuffer(content, dtype=np.uint8, offset=16).astype(np.float32)
+        X /= 255 # normalization
+        X = X.reshape((-1, 784))
+        
+    with gzip.open(label_filename, 'rb') as f:
+        content = f.read()
+        y = np.frombuffer(content, dtype=np.uint8, offset=8)
+        
+    return X, y        
     ### END YOUR CODE
 
 
@@ -68,7 +78,10 @@ def softmax_loss(Z, y):
         Average softmax loss over the sample.
     """
     ### BEGIN YOUR CODE
-    pass
+    batch_size = Z.shape[0]
+    exp = np.exp(Z)
+    softmax = exp / np.sum(exp, axis=1).reshape(batch_size, -1)
+    return np.mean(-np.log(softmax[np.arange(batch_size), y]))
     ### END YOUR CODE
 
 
@@ -91,7 +104,21 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    iter_num = X.shape[0] // batch
+    for iter in range(iter_num):
+        iter_X = X[iter * batch : (iter+1) * batch, :]
+        iter_y = y[iter * batch : (iter+1) * batch]
+        
+        Z = np.matmul(iter_X, theta)
+        
+        expz = np.exp(Z)
+        grad = expz / np.sum(expz, axis=1).reshape(Z.shape[0], -1)
+        grad[np.arange(Z.shape[0]), iter_y] -= 1
+        grad /= batch
+        
+        dW = np.matmul(iter_X.T, grad)
+        theta -= lr * dW
+        
     ### END YOUR CODE
 
 
@@ -118,7 +145,27 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    iter_num = X.shape[0] // batch
+    for iter in range(iter_num):
+        iter_X = X[iter * batch : (iter+1) * batch, :]
+        iter_y = y[iter * batch : (iter+1) * batch]
+        
+        Z1 = np.matmul(iter_X, W1)
+        relu_mask = Z1 > 0
+        relu = Z1 * relu_mask
+        Z2 = np.matmul(relu, W2)
+        
+        expz = np.exp(Z2)
+        dZ = expz / np.sum(expz, axis=1).reshape(Z2.shape[0], -1)
+        dZ[np.arange(Z2.shape[0]), iter_y] -= 1
+        dZ /= batch
+        
+        dW2 = np.matmul(relu.T, dZ)
+        drelu = np.matmul(dZ, W2.T) * relu_mask
+        dW1 = np.matmul(iter_X.T, drelu)
+        
+        W2 -= lr * dW2
+        W1 -= lr * dW1        
     ### END YOUR CODE
 
 
