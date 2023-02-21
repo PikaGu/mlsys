@@ -58,7 +58,7 @@ def parse_mnist(image_filename, label_filename):
         content = f.read()
         y = np.frombuffer(content, dtype=np.uint8, offset=8)
         
-    return X, y        
+    return X, y
     ### END YOUR CODE
 
 
@@ -165,7 +165,7 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
         dW1 = np.matmul(iter_X.T, drelu)
         
         W2 -= lr * dW2
-        W1 -= lr * dW1        
+        W1 -= lr * dW1
     ### END YOUR CODE
 
 

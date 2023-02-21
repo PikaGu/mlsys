@@ -30,7 +30,17 @@ def parse_mnist(image_filesname, label_filename):
                 for MNIST will contain the values 0-9.
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    with gzip.open(image_filesname, 'rb') as f:
+        content = f.read()
+        X = np.frombuffer(content, dtype=np.uint8, offset=16).astype(np.float32)
+        X /= 255 # normalization
+        X = X.reshape((-1, 784))
+        
+    with gzip.open(label_filename, 'rb') as f:
+        content = f.read()
+        y = np.frombuffer(content, dtype=np.uint8, offset=8)
+        
+    return X, y
     ### END YOUR SOLUTION
 
 
@@ -51,7 +61,10 @@ def softmax_loss(Z, y_one_hot):
         Average softmax loss over the sample. (ndl.Tensor[np.float32])
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    batch_size = Z.shape[0]
+    exp = np.exp(Z)
+    softmax = exp / np.sum(exp, axis=1).reshape(batch_size, -1)
+    return np.mean(-np.log(softmax[np.arange(batch_size), y]))
     ### END YOUR SOLUTION
 
 
@@ -80,7 +93,27 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
     """
 
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    iter_num = X.shape[0] // batch
+    for iter in range(iter_num):
+        iter_X = X[iter * batch : (iter+1) * batch, :]
+        iter_y = y[iter * batch : (iter+1) * batch]
+        
+        Z1 = np.matmul(iter_X, W1)
+        relu_mask = Z1 > 0
+        relu = Z1 * relu_mask
+        Z2 = np.matmul(relu, W2)
+        
+        expz = np.exp(Z2)
+        dZ = expz / np.sum(expz, axis=1).reshape(Z2.shape[0], -1)
+        dZ[np.arange(Z2.shape[0]), iter_y] -= 1
+        dZ /= batch
+        
+        dW2 = np.matmul(relu.T, dZ)
+        drelu = np.matmul(dZ, W2.T) * relu_mask
+        dW1 = np.matmul(iter_X.T, drelu)
+        
+        W2 -= lr * dW2
+        W1 -= lr * dW1
     ### END YOUR SOLUTION
 
 
