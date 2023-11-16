@@ -50,9 +50,7 @@ def parse_mnist(image_filename, label_filename):
     ### BEGIN YOUR CODE
     with gzip.open(image_filename, 'rb') as f:
         content = f.read()
-        X = np.frombuffer(content, dtype=np.uint8, offset=16).astype(np.float32)
-        X /= 255 # normalization
-        X = X.reshape((-1, 784))
+        X = np.frombuffer(content, dtype=np.uint8, offset=16).astype(np.float32).reshape((-1, 784)) / 255
         
     with gzip.open(label_filename, 'rb') as f:
         content = f.read()
@@ -79,9 +77,10 @@ def softmax_loss(Z, y):
     """
     ### BEGIN YOUR CODE
     batch_size = Z.shape[0]
-    exp = np.exp(Z)
-    softmax = exp / np.sum(exp, axis=1).reshape(batch_size, -1)
-    return np.mean(-np.log(softmax[np.arange(batch_size), y]))
+    expZ = np.exp(Z)
+    sumZ = np.sum(expZ, axis=1)
+    logZ = np.log(sumZ)
+    return np.mean(logZ - Z[np.arange(batch_size), y])
     ### END YOUR CODE
 
 
@@ -111,13 +110,13 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
         
         Z = np.matmul(iter_X, theta)
         
-        expz = np.exp(Z)
-        grad = expz / np.sum(expz, axis=1).reshape(Z.shape[0], -1)
-        grad[np.arange(Z.shape[0]), iter_y] -= 1
+        expZ = np.exp(Z)
+        grad = expZ / np.sum(expZ, axis=1).reshape((batch, -1))
+        grad[np.arange(batch), iter_y] -= 1
         grad /= batch
+        grad = np.matmul(np.transpose(iter_X), grad)
         
-        dW = np.matmul(iter_X.T, grad)
-        theta -= lr * dW
+        theta -= lr * grad
         
     ### END YOUR CODE
 
