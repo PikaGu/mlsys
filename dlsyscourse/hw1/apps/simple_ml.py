@@ -62,9 +62,9 @@ def softmax_loss(Z, y_one_hot):
     """
     ### BEGIN YOUR SOLUTION
     batch_size = Z.shape[0]
-    exp = np.exp(Z)
-    softmax = exp / np.sum(exp, axis=1).reshape(batch_size, -1)
-    return np.mean(-np.log(softmax[np.arange(batch_size), y]))
+    log_sum_expZ = ndl.log(ndl.summation(ndl.exp(Z), axes=1))
+    loss_sum = ndl.summation(log_sum_expZ) - ndl.summation(Z * y_one_hot)
+    return loss_sum / batch_size
     ### END YOUR SOLUTION
 
 
@@ -98,22 +98,19 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
         iter_X = X[iter * batch : (iter+1) * batch, :]
         iter_y = y[iter * batch : (iter+1) * batch]
         
-        Z1 = np.matmul(iter_X, W1)
-        relu_mask = Z1 > 0
-        relu = Z1 * relu_mask
-        Z2 = np.matmul(relu, W2)
+        image = ndl.Tensor(iter_X)
+        label = np.zeros((batch, W2.shape[1]))
+        label[np.arange(batch), iter_y] = 1
+        label = ndl.Tensor(label)
+
+        Z = ndl.matmul(ndl.relu(ndl.matmul(image, W1)), W2)
         
-        expz = np.exp(Z2)
-        dZ = expz / np.sum(expz, axis=1).reshape(Z2.shape[0], -1)
-        dZ[np.arange(Z2.shape[0]), iter_y] -= 1
-        dZ /= batch
+        loss = softmax_loss(Z, label)
+        loss.backward()
         
-        dW2 = np.matmul(relu.T, dZ)
-        drelu = np.matmul(dZ, W2.T) * relu_mask
-        dW1 = np.matmul(iter_X.T, drelu)
-        
-        W2 -= lr * dW2
-        W1 -= lr * dW1
+        W2 = ndl.Tensor(W2.numpy() - lr * W2.grad.numpy())
+        W1 = ndl.Tensor(W1.numpy() - lr * W1.grad.numpy())
+    return (W1, W2)
     ### END YOUR SOLUTION
 
 
