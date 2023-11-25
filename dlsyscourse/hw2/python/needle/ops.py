@@ -372,7 +372,9 @@ class LogSumExp(TensorOp):
 
     def compute(self, Z):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        maxZ = Tensor(array_api.max(Z))
+        Z = exp(maxZ)
+        return log(summation(Z, self.axes)) - maxZ
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
