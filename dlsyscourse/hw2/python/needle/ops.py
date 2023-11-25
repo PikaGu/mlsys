@@ -370,16 +370,24 @@ class LogSumExp(TensorOp):
     def __init__(self, axes: Optional[tuple] = None):
         self.axes = axes
 
-    def compute(self, Z):
+    def compute(self, Z): 
         ### BEGIN YOUR SOLUTION
-        maxZ = Tensor(array_api.max(Z))
-        Z = exp(maxZ)
-        return log(summation(Z, self.axes)) - maxZ
+        maxZ = array_api.max(Z, self.axes)
+        return array_api.log(array_api.sum(array_api.exp(Z-maxZ), self.axes)) + maxZ
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        inputs_shape = node.inputs.shape
+        new_shape = [1] * len(inputs_shape)
+        cur = 0
+        for i in range(len(inputs_shape)):
+            if cur < len(out_grad.shape) and out_grad.shape[cur] == inputs_shape[i]:
+                new_shape[i] = inputs_shape[i]
+                cur += 1
+        maxZ = array_api.max(node.inputs, self.axes)
+        expZ = array_api.exp(node.inputs - maxZ)
+        return broadcast_to(reshape(out_grad, new_shape), inputs_shape) * Tensor(expZ/array_api.sum(expZ, axis=self.axes, keepdims=True))
         ### END YOUR SOLUTION
 
 
