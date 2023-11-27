@@ -372,22 +372,23 @@ class LogSumExp(TensorOp):
 
     def compute(self, Z): 
         ### BEGIN YOUR SOLUTION
-        maxZ = array_api.max(Z, self.axes)
-        return array_api.log(array_api.sum(array_api.exp(Z-maxZ), self.axes)) + maxZ
+        maxZ = array_api.max(Z, axis=self.axes, keepdims=True)
+        return array_api.squeeze(array_api.log(array_api.sum(array_api.exp(Z-maxZ), axis=self.axes, keepdims=True)) + maxZ)
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        inputs_shape = node.inputs.shape
-        new_shape = [1] * len(inputs_shape)
-        cur = 0
-        for i in range(len(inputs_shape)):
-            if cur < len(out_grad.shape) and out_grad.shape[cur] == inputs_shape[i]:
-                new_shape[i] = inputs_shape[i]
-                cur += 1
-        maxZ = array_api.max(node.inputs, self.axes)
-        expZ = array_api.exp(node.inputs - maxZ)
-        return broadcast_to(reshape(out_grad, new_shape), inputs_shape) * Tensor(expZ/array_api.sum(expZ, axis=self.axes, keepdims=True))
+        inputs_shape = node.inputs[0].shape
+        inputs_data = node.inputs[0].cached_data
+        new_shape = list(inputs_shape)
+        if self.axes:
+            for i in self.axes:
+                new_shape[i] = 1
+            out_grad = reshape(out_grad, new_shape)
+        maxZ = array_api.max(inputs_data, axis=self.axes, keepdims=True)
+        expZ = array_api.exp(inputs_data - maxZ)
+        dZ = Tensor(expZ / array_api.sum(expZ, axis=self.axes, keepdims=True))
+        return broadcast_to(out_grad, inputs_shape) * dZ
         ### END YOUR SOLUTION
 
 

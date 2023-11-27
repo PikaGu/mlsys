@@ -88,8 +88,8 @@ class Linear(Module):
         self.out_features = out_features
 
         ### BEGIN YOUR SOLUTION
-        self.weight = Parameter(init.kaiming_uniform(in_features, out_features))
-        self.bias = Parameter(ops.reshape(init.kaiming_uniform(out_features, 1), (1, out_features)))
+        self.weight = Parameter(init.kaiming_uniform(in_features, out_features, device, dtype))
+        self.bias = Parameter(ops.reshape(init.kaiming_uniform(out_features, 1, device, dtype), (1, out_features)))
         self.need_bias = bias
         ### END YOUR SOLUTION
 
