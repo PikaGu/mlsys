@@ -133,7 +133,9 @@ class Sequential(Module):
 class SoftmaxLoss(Module):
     def forward(self, logits: Tensor, y: Tensor):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        batch_size, n = logits.shape[0], logits.shape[1]
+        one_hot_y = init.one_hot(n, y)
+        return (ops.summation(ops.logsumexp(logits, axes=(1,))) - ops.summation(logits * one_hot_y)) / batch_size
         ### END YOUR SOLUTION
 
 
@@ -161,12 +163,21 @@ class LayerNorm1d(Module):
         self.dim = dim
         self.eps = eps
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.weight = Parameter(init.ones(dim, device=device, dtype=dtype))
+        self.bias = Parameter(init.zeros(dim, device=device, dtype=dtype))
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        mean = ops.summation(x, axes=(1,)).reshape((x.shape[0], -1)).broadcast_to(x.shape) / x.shape[1]
+        diff = x - mean
+        vars = ops.summation(diff ** 2, axes=(1,)).reshape((x.shape[0], -1)).broadcast_to(x.shape) / x.shape[1]
+        norm = diff / ((vars + self.eps) ** 0.5)
+        
+        weight = ops.broadcast_to(ops.reshape(self.weight, (1, x.shape[1])), x.shape)
+        bias = ops.broadcast_to(ops.reshape(self.weight, (1, x.shape[1])), x.shape)
+        
+        return norm * weight + bias
         ### END YOUR SOLUTION
 
 
