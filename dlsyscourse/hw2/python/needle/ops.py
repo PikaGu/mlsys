@@ -266,8 +266,9 @@ class Summation(TensorOp):
         if self.axes:
             for i in tuple(self.axes):
                 new_shape[i] = 1
-            reshape(out_grad, tuple(new_shape))
-        return broadcast_to(out_grad, inputs_shape)
+        else:
+            new_shape = [1] * len(new_shape)
+        return broadcast_to(reshape(out_grad, tuple(new_shape)), inputs_shape)
         ### END YOUR SOLUTION
 
 

@@ -169,13 +169,13 @@ class LayerNorm1d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        mean = ops.summation(x, axes=(1,)).reshape((x.shape[0], -1)).broadcast_to(x.shape) / x.shape[1]
+        mean = ops.summation(x, axes=(1,)).reshape((x.shape[0], -1)).broadcast_to(x.shape) / self.dim
         diff = x - mean
-        vars = ops.summation(diff ** 2, axes=(1,)).reshape((x.shape[0], -1)).broadcast_to(x.shape) / x.shape[1]
+        vars = ops.summation(diff ** 2, axes=(1,)).reshape((x.shape[0], -1)).broadcast_to(x.shape) / self.dim
         norm = diff / ((vars + self.eps) ** 0.5)
         
-        weight = ops.broadcast_to(ops.reshape(self.weight, (1, x.shape[1])), x.shape)
-        bias = ops.broadcast_to(ops.reshape(self.weight, (1, x.shape[1])), x.shape)
+        weight = ops.broadcast_to(ops.reshape(self.weight, (1, self.dim)), x.shape)
+        bias = ops.broadcast_to(ops.reshape(self.bias, (1, self.dim)), x.shape)
         
         return norm * weight + bias
         ### END YOUR SOLUTION
