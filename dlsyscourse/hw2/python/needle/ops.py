@@ -253,6 +253,8 @@ def broadcast_to(a, shape):
 class Summation(TensorOp):
     def __init__(self, axes: Optional[tuple] = None):
         self.axes = axes
+        if isinstance(self.axes, int): 
+            self.axes = tuple([self.axes])
 
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
@@ -264,7 +266,7 @@ class Summation(TensorOp):
         inputs_shape = node.inputs[0].shape
         new_shape = list(inputs_shape)
         if self.axes:
-            for i in tuple(self.axes):
+            for i in self.axes:
                 new_shape[i] = 1
         else:
             new_shape = [1] * len(new_shape)
