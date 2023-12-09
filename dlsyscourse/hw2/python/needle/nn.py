@@ -202,7 +202,7 @@ class LayerNorm1d(Module):
         norm = diff / (ops.power_scalar(vars + self.eps, 0.5))  
         
         weight = ops.broadcast_to(ops.reshape(self.weight, (1, -1)), x.shape)
-        bias = ops.broadcast_to(ops.reshape(self.bias, (1, -1)), x.shape)   
+        bias = ops.broadcast_to(ops.reshape(self.bias, (1, -1)), x.shape)
 
         return weight * norm + bias
         ### END YOUR SOLUTION

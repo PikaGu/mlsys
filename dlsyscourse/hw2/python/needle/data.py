@@ -1,3 +1,4 @@
+import gzip
 import numpy as np
 from .autograd import Tensor
 
@@ -24,7 +25,9 @@ class RandomFlipHorizontal(Transform):
         """
         flip_img = np.random.rand() < self.p
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if flip_img:
+            img = img[:, ::-1, :]
+        return img
         ### END YOUR SOLUTION
 
 
@@ -42,7 +45,10 @@ class RandomCrop(Transform):
         """
         shift_x, shift_y = np.random.randint(low=-self.padding, high=self.padding+1, size=2)
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        H, W, C = img.shape
+        padding_img = np.zeros((H+self.padding*2, W+self.padding*2, C))
+        padding_img[self.padding:self.padding+H, self.padding:self.padding+W, :] = img
+        return padding_img[self.padding+shift_x:self.padding+H+shift_x, self.padding+shift_y:self.padding+W+shift_y, :]
         ### END YOUR SOLUTION
 
 
@@ -101,13 +107,21 @@ class DataLoader:
 
     def __iter__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.index = 0
+        if self.shuffle:
+            indexes = np.arange(len(self.dataset))
+            np.random.shuffle(indexes)
+            self.ordering = np.array_split(indexes, range(self.batch_size, len(self.dataset), self.batch_size))
         ### END YOUR SOLUTION
         return self
 
     def __next__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if self.index >= len(self.ordering):
+            raise StopIteration
+        res = [Tensor(x) for x in self.dataset[self.ordering[self.index]]]
+        self.index += 1
+        return res
         ### END YOUR SOLUTION
 
 
@@ -119,17 +133,34 @@ class MNISTDataset(Dataset):
         transforms: Optional[List] = None,
     ):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        with gzip.open(image_filename, 'rb') as f:
+            content = f.read()
+            X = np.frombuffer(content, dtype=np.uint8, offset=16).astype(np.float32).reshape((-1, 784)) / 255
+        
+        with gzip.open(label_filename, 'rb') as f:
+            content = f.read()
+            y = np.frombuffer(content, dtype=np.uint8, offset=8)
+            
+        self.images = X
+        self.labels = y
+        self.transforms = transforms
         ### END YOUR SOLUTION
 
     def __getitem__(self, index) -> object:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        img = self.images[index]
+        if (len(img.shape) == 1):
+            img = img.reshape((28, 28, -1))
+        else:
+            img = img.reshape((img.shape[0], 28, 28, -1))
+        if self.transforms:
+            img = self.apply_transforms(img)
+        return img, self.labels[index]
         ### END YOUR SOLUTION
 
     def __len__(self) -> int:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return self.labels.shape[0]
         ### END YOUR SOLUTION
 
 class NDArrayDataset(Dataset):
