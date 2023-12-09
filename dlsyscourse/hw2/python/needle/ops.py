@@ -389,7 +389,7 @@ class LogSumExp(TensorOp):
             out_grad = reshape(out_grad, new_shape)
         maxZ = array_api.max(inputs_data, axis=self.axes, keepdims=True)
         expZ = array_api.exp(inputs_data - maxZ)
-        dZ = Tensor(expZ / array_api.sum(expZ, axis=self.axes, keepdims=True))
+        dZ = Tensor(expZ / array_api.sum(expZ, axis=self.axes, keepdims=True), dtype=out_grad.dtype)
         return broadcast_to(out_grad, inputs_shape) * dZ
         ### END YOUR SOLUTION
 

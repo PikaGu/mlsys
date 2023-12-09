@@ -25,7 +25,16 @@ class SGD(Optimizer):
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        for p in self.params:
+            if p.grad is None:
+                continue
+            key = hash(p)
+            if not key in self.u:
+                self.u[key] = 0
+            grad = self.momentum * self.u[key] + (1 - self.momentum) * (p.grad.data + self.weight_decay * p.data)
+            grad = ndl.Tensor(grad, dtype=p.dtype)
+            self.u[key] = grad
+            p.data = p.data - self.lr * self.u[key]
         ### END YOUR SOLUTION
 
 
