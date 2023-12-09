@@ -993,26 +993,32 @@ def submit_optim_sgd():
 def test_optim_adam_1():
     np.testing.assert_allclose(learn_model_1d(64, 16, lambda z: nn.Sequential(nn.Linear(64, 32), nn.ReLU(), nn.Linear(32, 16)), ndl.optim.Adam, lr=0.001),
         np.array(3.703999), rtol=1e-5, atol=1e-5)
+    print(global_tensor_count())
 
 def test_optim_adam_weight_decay_1():
     np.testing.assert_allclose(learn_model_1d(64, 16, lambda z: nn.Sequential(nn.Linear(64, 32), nn.ReLU(), nn.Linear(32, 16)), ndl.optim.Adam, lr=0.001, weight_decay=0.01),
         np.array(3.705134), rtol=1e-5, atol=1e-5)
+    print(global_tensor_count())
 
 def test_optim_adam_batchnorm_1():
     np.testing.assert_allclose(learn_model_1d(64, 16, lambda z: nn.Sequential(nn.Linear(64, 32), nn.ReLU(), nn.BatchNorm1d(32), nn.Linear(32, 16)), ndl.optim.Adam, lr=0.001, weight_decay=0.001),
         np.array(3.296256, dtype=np.float32), rtol=1e-5, atol=1e-5)
+    print(global_tensor_count())
 
 def test_optim_adam_batchnorm_eval_mode_1():
     np.testing.assert_allclose(learn_model_1d_eval(64, 16, lambda z: nn.Sequential(nn.Linear(64, 32), nn.ReLU(), nn.BatchNorm1d(32), nn.Linear(32, 16)), ndl.optim.Adam, lr=0.001, weight_decay=0.001),
         np.array(3.192054, dtype=np.float32), rtol=1e-5, atol=1e-5)
+    print(global_tensor_count())
 
 def test_optim_adam_layernorm_1():
     np.testing.assert_allclose(learn_model_1d(64, 16, lambda z: nn.Sequential(nn.Linear(64, 32), nn.ReLU(), nn.LayerNorm1d(32), nn.Linear(32, 16)), ndl.optim.Adam, lr=0.01, weight_decay=0.01),
         np.array(2.82192, dtype=np.float32), rtol=1e-5, atol=1e-5)
+    print(global_tensor_count())
 
 def test_optim_adam_weight_decay_bias_correction_1():
     np.testing.assert_allclose(learn_model_1d(64, 16, lambda z: nn.Sequential(nn.Linear(64, 32), nn.ReLU(), nn.Linear(32, 16)), ndl.optim.Adam, lr=0.001, weight_decay=0.01),
         np.array(3.705134), rtol=1e-5, atol=1e-5)
+    print(global_tensor_count())
 
 # We're checking that you have not allocated too many tensors;
 # if this fails, make sure you're using .detach()/.data whenever possible.

@@ -157,24 +157,30 @@ class BatchNorm1d(Module):
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
         batch_size = x.shape[0]
-        if self.training:
-            batch_mean = ops.summation(x, axes=0) / batch_size
-            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean
-            diff = x - ops.reshape(batch_mean, (-1, x.shape[1])).broadcast_to(x.shape)
-            batch_vars = ops.summation(diff ** 2, axes=0) / batch_size
-            self.running_var = (1 - self.momentum) * self.running_var + self.momentum * batch_vars
-        else:
-            batch_mean = self.running_mean
-            batch_vars = self.running_var
-
-        batch_mean = ops.reshape(batch_mean, (-1, x.shape[1])).broadcast_to(x.shape)
-        batch_vars = ops.reshape(batch_vars, (-1, x.shape[1])).broadcast_to(x.shape)
-        x_norm = (x - batch_mean) / ((batch_vars + self.eps) ** 0.5)
-
         weight = ops.broadcast_to(ops.reshape(self.weight, (1, -1)), x.shape)
         bias = ops.broadcast_to(ops.reshape(self.bias, (1, -1)), x.shape)
 
-        return x_norm * weight + bias
+        if self.training:
+            x_mean = ops.summation(x, axes=0) / batch_size
+            batch_mean = ops.reshape(x_mean, (1, -1)).broadcast_to(x.shape)
+            diff = x - batch_mean
+            x_vars = ops.summation(diff ** 2, axes=0) / batch_size
+            batch_vars = ops.reshape(x_vars, (1, -1)).broadcast_to(x.shape)
+            x_norm = diff / ((batch_vars + self.eps) ** 0.5)        
+            
+            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * x_mean
+            self.running_var = (1 - self.momentum) * self.running_var + self.momentum * x_vars
+            # batch_mean = ops.summation(x, axes=0) / batch_size
+            # self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean
+            # batch_mean = ops.reshape(batch_mean, (1, -1)).broadcast_to(x.shape)
+            # batch_vars = ops.summation((x - batch_mean) ** 2, axes=0) / batch_size
+            # self.running_var = (1 - self.momentum) * self.running_var + self.momentum * batch_vars
+            # batch_vars = ops.reshape(batch_vars, (1, -1)).broadcast_to(x.shape)
+        else:
+            batch_mean = ops.reshape(self.running_mean, (1, -1)).broadcast_to(x.shape)
+            batch_vars = ops.reshape(self.running_var, (1, -1)).broadcast_to(x.shape)
+            x_norm = (x - batch_mean) / ((batch_vars + self.eps) ** 0.5)        
+        return weight * x_norm + bias
         ### END YOUR SOLUTION
 
 
@@ -190,15 +196,15 @@ class LayerNorm1d(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        mean = ops.summation(x, axes=(1,)).reshape((x.shape[0], -1)).broadcast_to(x.shape) / self.dim
+        mean = ops.summation(x, axes=(1,)).reshape((-1, 1)).broadcast_to(x.shape) / self.dim
         diff = x - mean
-        vars = ops.summation(diff ** 2, axes=(1,)).reshape((x.shape[0], -1)).broadcast_to(x.shape) / self.dim
-        norm = diff / ((vars + self.eps) ** 0.5)
+        vars = ops.summation(diff ** 2, axes=(1,)).reshape((-1, 1)).broadcast_to(x.shape) / self.dim
+        norm = diff / (ops.power_scalar(vars + self.eps, 0.5))  
         
-        weight = ops.broadcast_to(ops.reshape(self.weight, (1, self.dim)), x.shape)
-        bias = ops.broadcast_to(ops.reshape(self.bias, (1, self.dim)), x.shape)
-        
-        return norm * weight + bias
+        weight = ops.broadcast_to(ops.reshape(self.weight, (1, -1)), x.shape)
+        bias = ops.broadcast_to(ops.reshape(self.bias, (1, -1)), x.shape)   
+
+        return weight * norm + bias
         ### END YOUR SOLUTION
 
 
