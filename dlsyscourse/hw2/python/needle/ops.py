@@ -242,7 +242,7 @@ class BroadcastTo(TensorOp):
         for i in range(len(self.shape)):
             if self.shape[i] != shape[i]:
                 sum_shape.append(i)
-        return reshape(summation(out_grad, tuple(sum_shape)), inputs_shape)
+        return Tensor(array_api.reshape(array_api.sum(out_grad.cached_data, axis=tuple(sum_shape)), inputs_shape))
         ### END YOUR SOLUTION
 
 
@@ -270,7 +270,7 @@ class Summation(TensorOp):
                 new_shape[i] = 1
         else:
             new_shape = [1] * len(new_shape)
-        return broadcast_to(reshape(out_grad, tuple(new_shape)), inputs_shape)
+        return reshape(out_grad, tuple(new_shape)) * array_api.ones(inputs_shape, dtype=array_api.float32)
         ### END YOUR SOLUTION
 
 
@@ -382,15 +382,17 @@ class LogSumExp(TensorOp):
         ### BEGIN YOUR SOLUTION
         inputs_shape = node.inputs[0].shape
         inputs_data = node.inputs[0].cached_data
-        new_shape = list(inputs_shape)
-        if self.axes:
-            for i in self.axes:
-                new_shape[i] = 1
-            out_grad = reshape(out_grad, new_shape)
         maxZ = array_api.max(inputs_data, axis=self.axes, keepdims=True)
         expZ = array_api.exp(inputs_data - maxZ)
-        dZ = Tensor(expZ / array_api.sum(expZ, axis=self.axes, keepdims=True), dtype=out_grad.dtype)
-        return broadcast_to(out_grad, inputs_shape) * dZ
+        sumZ = array_api.sum(expZ, axis=self.axes)
+        new_shape = list(inputs_shape)
+        if self.axes:
+            for i in tuple(self.axes):
+                new_shape[i] = 1
+        else:
+            new_shape = [1] * len(new_shape)
+        grad = expZ * array_api.reshape(out_grad.cached_data / sumZ, new_shape)
+        return Tensor(grad)
         ### END YOUR SOLUTION
 
 

@@ -136,6 +136,7 @@ class MNISTDataset(Dataset):
         with gzip.open(image_filename, 'rb') as f:
             content = f.read()
             X = np.frombuffer(content, dtype=np.uint8, offset=16).astype(np.float32).reshape((-1, 784)) / 255
+            X = X.reshape((-1, 28, 28, 1))
         
         with gzip.open(label_filename, 'rb') as f:
             content = f.read()
@@ -149,10 +150,6 @@ class MNISTDataset(Dataset):
     def __getitem__(self, index) -> object:
         ### BEGIN YOUR SOLUTION
         img = self.images[index]
-        if (len(img.shape) == 1):
-            img = img.reshape((28, 28, -1))
-        else:
-            img = img.reshape((img.shape[0], 28, 28, -1))
         if self.transforms:
             img = self.apply_transforms(img)
         return img, self.labels[index]

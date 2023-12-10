@@ -31,10 +31,9 @@ class SGD(Optimizer):
             key = hash(p)
             if not key in self.u:
                 self.u[key] = 0
-            grad = self.momentum * self.u[key] + (1 - self.momentum) * (p.grad.data + self.weight_decay * p.data)
-            grad = ndl.Tensor(grad, dtype=p.dtype)
+            grad = self.momentum * self.u[key] + (1 - self.momentum) * (p.grad.detach() + self.weight_decay * p.detach())
             self.u[key] = grad
-            p.data = p.data - self.lr * self.u[key]
+            p.cached_data -= self.lr * grad.cached_data
         ### END YOUR SOLUTION
 
 
@@ -64,12 +63,10 @@ class Adam(Optimizer):
         self.t += 1
         for p in self.params:
             key = hash(p)
-            grad = p.grad.data + self.weight_decay * p.data
+            grad = p.grad.detach() + self.weight_decay * p.detach()
             self.m[key] = self.beta1 * self.m.get(key, 0) + (1 - self.beta1) * grad
             self.v[key] = self.beta2 * self.v.get(key, 0) + (1 - self.beta2) * grad * grad
-            u_grad = self.m[key] / (1 - self.beta1 ** self.t)
-            v_grad = self.v[key] / (1 - self.beta2 ** self.t)
-            grad = self.lr * u_grad / (v_grad ** 0.5 + self.eps)
-            grad = ndl.Tensor(grad, dtype=p.dtype)
-            p.data -= grad
+            u_grad = (self.m[key] / (1 - self.beta1 ** self.t)).detach()
+            v_grad = (self.v[key] / (1 - self.beta2 ** self.t)).detach()
+            p.cached_data -= self.lr * (u_grad / (v_grad ** 0.5 + self.eps)).cached_data
         ### END YOUR SOLUTION
