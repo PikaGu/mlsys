@@ -168,8 +168,8 @@ class BatchNorm1d(Module):
             batch_vars = ops.reshape(x_vars, (1, -1)).broadcast_to(x.shape)
             x_norm = diff / ((batch_vars + self.eps) ** 0.5)        
             
-            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * x_mean
-            self.running_var = (1 - self.momentum) * self.running_var + self.momentum * x_vars
+            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * x_mean.detach()
+            self.running_var = (1 - self.momentum) * self.running_var + self.momentum * x_vars.detach()
             # batch_mean = ops.summation(x, axes=0) / batch_size
             # self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean
             # batch_mean = ops.reshape(batch_mean, (1, -1)).broadcast_to(x.shape)

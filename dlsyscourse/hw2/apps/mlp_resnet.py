@@ -64,7 +64,7 @@ def epoch(dataloader, model, opt=None):
             opt.reset_grad()
             loss.backward()
             opt.step()
-    print(err, num_samples, total_loss, count)
+    # print(err, num_samples, total_loss, count)
     return err / num_samples, total_loss / count
     ### END YOUR SOLUTION
 
@@ -96,8 +96,8 @@ def train_mnist(batch_size=100, epochs=10, optimizer=ndl.optim.Adam,
     for ep in range(epochs):
         train_err, train_loss = epoch(train_dataloader, model, opt)
         test_err, test_loss = epoch(test_dataloader, model)
-        print("|  {:>4} |    {:.5f} |   {:.5f} |   {:.5f} |  {:.5f} |"\
-              .format(ep, train_loss, train_err, test_loss, test_err))
+        # print("|  {:>4} |    {:.5f} |   {:.5f} |   {:.5f} |  {:.5f} |"\
+        #       .format(ep, train_loss, train_err, test_loss, test_err))
     return tuple([train_err, train_loss, test_err, test_loss])
     ### END YOUR SOLUTION
 
