@@ -241,7 +241,9 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if self.size != prod(new_shape):
+            raise ValueError
+        return self.as_strided(new_shape, self.compact_strides(new_shape))
         ### END YOUR SOLUTION
 
     def permute(self, new_axes):
@@ -264,7 +266,12 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        new_shape = []
+        new_strides = []
+        for i in new_axes:
+            new_shape.append(self._shape[i])
+            new_strides.append(self._strides[i])
+        return self.as_strided(tuple(new_shape), tuple(new_strides))
         ### END YOUR SOLUTION
 
     def broadcast_to(self, new_shape):
@@ -285,7 +292,13 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        new_strides = []
+        for i in range(len(new_shape)):
+            assert self.shape[i] == 1 or new_shape[i] == self.shape[i]
+            new_strides.append(self._strides[i])
+            if self.shape[i] == 1 and new_shape[i] != self.shape[i]:
+                new_strides[i] = 0
+        return self.as_strided(tuple(new_shape), tuple(new_strides))
         ### END YOUR SOLUTION
 
     ### Get and set elements
@@ -348,7 +361,18 @@ class NDArray:
         assert len(idxs) == self.ndim, "Need indexes equal to number of dimensions"
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        stride_base = 1
+        get_strides = []
+        for i in range(self.ndim-1, -1, -1):
+            stride_base *= idxs[i].step
+            get_strides.append(stride_base)
+            stride_base *= self.shape[i]
+        get_shape = []
+        offset = 0
+        for i in range(self.ndim):
+            get_shape.append((idxs[i].stop - idxs[i].start + idxs[i].step - 1) // idxs[i].step)
+            offset += idxs[i].start * self._strides[i]
+        return self.make(tuple(get_shape), tuple(get_strides[::-1]), self.device, self._handle, offset)
         ### END YOUR SOLUTION
 
     def __setitem__(self, idxs, other):
