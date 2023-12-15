@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <numeric>
 #include <stdexcept>
 
 namespace needle {
@@ -63,7 +64,24 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t> sha
    *  function will implement here, so we won't repeat this note.)
    */
   /// BEGIN YOUR SOLUTION
-  
+  int ndim = shape.size();
+  std::vector<uint32_t> prefix(ndim, 0);
+
+  out->size = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
+  int idx = 0;
+  while (idx < out->size) {
+    out->ptr[idx++] = a.ptr[offset];
+    for (auto i = ndim-1; i >= 0; i--) {
+      if (shape[i] == prefix[i]+1) {
+        offset -= (shape[i]-1) * strides[i];
+        prefix[i] = 0;
+      } else {
+        offset += strides[i];
+        ++prefix[i];
+        break;
+      }
+    }
+  }
   /// END YOUR SOLUTION
 }
 
