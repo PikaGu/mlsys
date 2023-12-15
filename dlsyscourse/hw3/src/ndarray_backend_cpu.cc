@@ -182,6 +182,87 @@ void ScalarAdd(const AlignedArray& a, scalar_t val, AlignedArray* out) {
 
 /// BEGIN YOUR SOLUTION
 
+void EwiseOp(const AlignedArray& a, const AlignedArray& b, AlignedArray* out, 
+                  std::function<scalar_t(scalar_t, scalar_t)> ewiseFunc) {
+  for (size_t i = 0; i < a.size; i++) {
+    out->ptr[i] = ewiseFunc(a.ptr[i], b.ptr[i]);
+  }
+}
+
+void EwiseOp(const AlignedArray& a, AlignedArray* out, 
+                  std::function<scalar_t(scalar_t)> ewiseFunc) {
+  for (size_t i = 0; i < a.size; i++) {
+    out->ptr[i] = ewiseFunc(a.ptr[i]);
+  }
+}
+
+void ScalarOp(const AlignedArray& a, scalar_t val, AlignedArray* out,
+                  std::function<scalar_t(scalar_t, scalar_t)> scalarFunc) {
+  for (size_t i = 0; i < a.size; i++) {
+    out->ptr[i] = scalarFunc(a.ptr[i], val);
+  }
+}
+
+void EwiseMul(const AlignedArray& a, const AlignedArray& b, AlignedArray* out) {
+  EwiseOp(a, b, out, std::multiplies<scalar_t>());
+}
+
+void ScalarMul(const AlignedArray& a, scalar_t val, AlignedArray* out) {
+  ScalarOp(a, val, out, std::multiplies<scalar_t>());
+}
+
+void EwiseDiv(const AlignedArray& a, const AlignedArray& b, AlignedArray* out) {
+  EwiseOp(a, b, out, std::divides<scalar_t>());
+}
+
+void ScalarDiv(const AlignedArray& a, scalar_t val, AlignedArray* out) {
+  ScalarOp(a, val, out, std::divides<scalar_t>());
+}
+
+void ScalarPower(const AlignedArray& a, scalar_t val, AlignedArray* out) {
+  ScalarOp(a, val, out, powf);
+}
+
+auto scalar_max = [](scalar_t x, scalar_t y){
+  return std::max(x, y);
+};
+
+void EwiseMaximum(const AlignedArray& a, const AlignedArray& b, AlignedArray* out) {
+  EwiseOp(a, b, out, scalar_max);
+}
+
+void ScalarMaximum(const AlignedArray& a, scalar_t val, AlignedArray* out) {
+  ScalarOp(a, val, out, scalar_max);
+}
+
+void EwiseEq(const AlignedArray& a, const AlignedArray& b, AlignedArray* out) {
+  EwiseOp(a, b, out, std::equal_to<scalar_t>());
+}
+
+void ScalarEq(const AlignedArray& a, scalar_t val, AlignedArray* out) {
+  ScalarOp(a, val, out, std::equal_to<scalar_t>());
+}
+
+void EwiseGe(const AlignedArray& a, const AlignedArray& b, AlignedArray* out) {
+  EwiseOp(a, b, out, std::greater_equal<scalar_t>());
+}
+
+void ScalarGe(const AlignedArray& a, scalar_t val, AlignedArray* out) {
+  ScalarOp(a, val, out, std::greater_equal<scalar_t>());
+}
+
+void EwiseLog(const AlignedArray& a, AlignedArray* out) {
+  EwiseOp(a, out, logf);
+}
+
+void EwiseExp(const AlignedArray& a, AlignedArray* out) {
+  EwiseOp(a, out, expf);
+}
+
+void EwiseTanh(const AlignedArray& a, AlignedArray* out) {
+  EwiseOp(a, out, tanhf);
+}
+
 /// END YOUR SOLUTION
 
 void Matmul(const AlignedArray& a, const AlignedArray& b, AlignedArray* out, uint32_t m, uint32_t n,
@@ -328,22 +409,22 @@ PYBIND11_MODULE(ndarray_backend_cpu, m) {
   m.def("ewise_add", EwiseAdd);
   m.def("scalar_add", ScalarAdd);
 
-  // m.def("ewise_mul", EwiseMul);
-  // m.def("scalar_mul", ScalarMul);
-  // m.def("ewise_div", EwiseDiv);
-  // m.def("scalar_div", ScalarDiv);
-  // m.def("scalar_power", ScalarPower);
+  m.def("ewise_mul", EwiseMul);
+  m.def("scalar_mul", ScalarMul);
+  m.def("ewise_div", EwiseDiv);
+  m.def("scalar_div", ScalarDiv);
+  m.def("scalar_power", ScalarPower);
 
-  // m.def("ewise_maximum", EwiseMaximum);
-  // m.def("scalar_maximum", ScalarMaximum);
-  // m.def("ewise_eq", EwiseEq);
-  // m.def("scalar_eq", ScalarEq);
-  // m.def("ewise_ge", EwiseGe);
-  // m.def("scalar_ge", ScalarGe);
+  m.def("ewise_maximum", EwiseMaximum);
+  m.def("scalar_maximum", ScalarMaximum);
+  m.def("ewise_eq", EwiseEq);
+  m.def("scalar_eq", ScalarEq);
+  m.def("ewise_ge", EwiseGe);
+  m.def("scalar_ge", ScalarGe);
 
-  // m.def("ewise_log", EwiseLog);
-  // m.def("ewise_exp", EwiseExp);
-  // m.def("ewise_tanh", EwiseTanh);
+  m.def("ewise_log", EwiseLog);
+  m.def("ewise_exp", EwiseExp);
+  m.def("ewise_tanh", EwiseTanh);
 
   m.def("matmul", Matmul);
   m.def("matmul_tiled", MatmulTiled);
