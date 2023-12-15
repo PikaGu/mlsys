@@ -45,7 +45,20 @@ void Fill(AlignedArray* out, scalar_t val) {
 }
 
 
-
+void next_pos(const std::vector<uint32_t>& shape, const std::vector<uint32_t>& strides, 
+              std::vector<uint32_t>* prefix, size_t* offset) {
+  int ndim = shape.size();
+  for (auto i = ndim-1; i >= 0; i--) {
+    if (shape[i] == (*prefix)[i]+1) {
+      *offset -= (shape[i]-1) * strides[i];
+      (*prefix)[i] = 0;
+    } else {
+      *offset += strides[i];
+      ++(*prefix)[i];
+      break;
+    }
+  }
+}
 
 void Compact(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t> shape,
              std::vector<uint32_t> strides, size_t offset) {
@@ -71,16 +84,7 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t> sha
   int idx = 0;
   while (idx < out->size) {
     out->ptr[idx++] = a.ptr[offset];
-    for (auto i = ndim-1; i >= 0; i--) {
-      if (shape[i] == prefix[i]+1) {
-        offset -= (shape[i]-1) * strides[i];
-        prefix[i] = 0;
-      } else {
-        offset += strides[i];
-        ++prefix[i];
-        break;
-      }
-    }
+    next_pos(shape, strides, &prefix, &offset);
   }
   /// END YOUR SOLUTION
 }
@@ -98,7 +102,14 @@ void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<uint32_t
    *   offset: offset of the *out* array (not a, which has zero offset, being compact)
    */
   /// BEGIN YOUR SOLUTION
-  
+  int ndim = shape.size();
+  std::vector<uint32_t> prefix(ndim, 0);
+
+  int idx = 0;
+  while (idx < a.size) {
+    out->ptr[offset] = a.ptr[idx++];
+    next_pos(shape, strides, &prefix, &offset);
+  }
   /// END YOUR SOLUTION
 }
 
@@ -119,7 +130,14 @@ void ScalarSetitem(const size_t size, scalar_t val, AlignedArray* out, std::vect
    */
 
   /// BEGIN YOUR SOLUTION
-  
+  int ndim = shape.size();
+  std::vector<uint32_t> prefix(ndim, 0);
+
+  int idx = 0;
+  while (idx++ < size) {
+    out->ptr[offset] = val;
+    next_pos(shape, strides, &prefix, &offset);
+  }
   /// END YOUR SOLUTION
 }
 
