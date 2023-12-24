@@ -9,6 +9,7 @@ using namespace std;
 int main() {
     // sum1d();
     // deviceInfo();
+    sum2d();
     cudaDeviceReset();
     return 0;
 }
