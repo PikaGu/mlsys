@@ -350,12 +350,14 @@ void MatmulTiled(const AlignedArray& a, const AlignedArray& b, AlignedArray* out
    *
    */
   /// BEGIN YOUR SOLUTION
-  for (auto i = 0; i < m / TILE; i++) {
-    for (auto j = 0; j < n / TILE; j++) {
-      for (auto k = 0; k < p / TILE; k++) {
-        auto a_tile = a.ptr + (i * TILE + j) * sizeof(scalar_t);
-        auto b_tile = b.ptr + (j * TILE + k) * sizeof(scalar_t);
-        auto out_tile = out->ptr + (i * TILE + k) * sizeof(scalar_t);
+  int m_tile = m / TILE, n_tile = n / TILE, p_tile = p / TILE;
+  std::fill(out->ptr, out->ptr + out->size, 0.0f);
+  for (auto i = 0; i < m_tile; i++) {
+    for (auto j = 0; j < n_tile; j++) {
+      for (auto k = 0; k < p_tile; k++) {
+        auto a_tile = a.ptr + (i * TILE * TILE * n_tile + j * TILE * TILE);
+        auto b_tile = b.ptr + (j * TILE * TILE * p_tile + k * TILE * TILE);
+        auto out_tile = out->ptr + (i * TILE * TILE * p_tile + k * TILE * TILE);
         AlignedDot(a_tile, b_tile, out_tile);
       }
     }
