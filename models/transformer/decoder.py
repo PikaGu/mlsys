@@ -10,8 +10,9 @@ class Decoder(nn.Module):
         self.layers = nn.ModuleList(DecoderLayer(d_model, ffn_hidden, n_head, drop_prob) for _ in range(N))
         self.norm = nn.LayerNorm(d_model)
 
-    def forward(self, x, mask):
+    def forward(self, x, memory, src_mask, tgt_mask):
         x = self.embedding(x)
         for layer in self.layers:
-            x = layer(x, mask)
-        return self.norm(x)
+            x = layer(x, memory, src_mask, tgt_mask)
+        x = self.norm(x)
+        return x
