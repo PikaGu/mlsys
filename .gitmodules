@@ -1,0 +1,3 @@
+[submodule "hands_on_cuda"]
+	path = hands_on_cuda
+	url = git@github.com:PikaGu/hands_on_cuda.git
