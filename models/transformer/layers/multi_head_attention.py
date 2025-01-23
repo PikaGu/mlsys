@@ -11,19 +11,20 @@ class MultiHeadAttention(nn.Module):
         self.h = h
         self.d_k = d_model // h
         self.dropout = nn.Dropout(p=drop_prob)
-    
+
     def forward(self, query, key, value, mask):
         if mask is not None:
-            mask = torch.unsqueeze(mask, 1)
+            mask = torch.unsqueeze(mask, 1) # (batch_size, seq_len) -> (batch_size, 1, seq_len)
         batch_size = query.size(0)
-        
+
+        # (batch_size, seq_len, d_model)
         query, key, value = [
-            linear(x).view(batch_size, -1, self.h, self.d_k).transpose(1, 2) # batch_size, h, seq_len, d_k
+            linear(x).view(batch_size, -1, self.h, self.d_k).transpose(1, 2) # (batch_size, h, seq_len, d_k)
             for linear, x in zip(self.linears, (query, key, value))
         ]
         x = self.attention(query, key, value, mask, self.dropout)        
         x = x.transpose().contiguous().view(batch_size, -1, self.h * self.d_k)
-        
+
         del query
         del key
         del value
