@@ -23,7 +23,7 @@ class MultiHeadAttention(nn.Module):
             for linear, x in zip(self.linears, (query, key, value))
         ]
         x = self.attention(query, key, value, mask, self.dropout)        
-        x = x.transpose().contiguous().view(batch_size, -1, self.h * self.d_k)
+        x = x.transpose(1, 2).contiguous().view(batch_size, -1, self.h * self.d_k)
 
         del query
         del key
@@ -37,4 +37,4 @@ class MultiHeadAttention(nn.Module):
         scores = torch.softmax(scores, dim=-1)
         if dropout is not None:
             scores = dropout(scores)
-        return torch.matmul(scores, value)
+        return torch.matmul(scores, value) # （batch_size, h, seq_len, d_k）
